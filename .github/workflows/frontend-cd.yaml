@@ -95,20 +95,7 @@ jobs:
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
-      - name: Setup kubectl
-        uses: azure/setup-kubectl@v4
-
-      - name: Configure kubeconfig
-        run: |
-          mkdir -p $HOME/.kube
-          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
-
+      # Optional: Kubernetes deployment skipped
       - name: Deploy to Kubernetes
-        env:
-          ECR_REGISTRY: 160277814735.dkr.ecr.us-east-1.amazonaws.com
-          ECR_REPOSITORY: frontend
-          IMAGE_TAG: ${{ github.sha }}
         run: |
-          sed "s|IMAGE_PLACEHOLDER|$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG|g" starter/frontend/k8s/deployment.yaml > frontend-deployment.yaml
-
-          kubectl apply --validate=false -f frontend-deployment.yaml
+          echo "Kubernetes deployment skipped - cluster not configured"
