@@ -110,3 +110,4 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
         run: |
           sed "s|IMAGE_PLACEHOLDER|$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG|g" starter/frontend/k8s/deployment.yaml | kubectl apply -f -
+
