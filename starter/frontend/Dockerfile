@@ -3,15 +3,11 @@ FROM node:18-alpine
 WORKDIR /app
 
 COPY package*.json ./
-
 RUN npm ci
 
 COPY . .
 
-# Build argument required by Frontend CD
 ARG REACT_APP_MOVIE_API_URL
-
-# Make it available to React build
 ENV REACT_APP_MOVIE_API_URL=$REACT_APP_MOVIE_API_URL
 
 RUN npm run build
