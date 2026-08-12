@@ -16,7 +16,8 @@ env:
   ECR_REPOSITORY: frontend
 
   # Base backend URL (WITHOUT /movies)
-  REACT_APP_MOVIE_API_URL: http://aef2ead0113804ba6a3df7124b342f04-1898121545.us-east-1.elb.amazonaws.com:5000 
+  REACT_APP_MOVIE_API_URL: http://aef2ead0113804ba6a3df7124b342f04-1898121545.us-east-1.elb.amazonaws.com:5000
+
 jobs:
   lint:
     name: Lint
@@ -83,6 +84,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
