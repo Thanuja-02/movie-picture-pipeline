@@ -49,7 +49,7 @@ jobs:
           cache-dependency-path: starter/frontend/package-lock.json
 
       - run: npm ci
-      - run: CI=true npm test
+      - run: CI=true npm test -- --watchAll=false
 
   build:
     runs-on: ubuntu-latest
