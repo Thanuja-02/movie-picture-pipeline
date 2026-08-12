@@ -9,7 +9,8 @@ function MovieList({ onMovieClick }) {
     axios
       .get(`${process.env.REACT_APP_MOVIE_API_URL}/movies`)
       .then((response) => {
-        setMovies(response.data.movies);
+        // Backend returns an array directly
+        setMovies(response.data);
       })
       .catch((error) => {
         console.error('Error fetching movies:', error);
