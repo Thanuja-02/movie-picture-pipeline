@@ -31,7 +31,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 24
           cache: npm
           cache-dependency-path: starter/frontend/package-lock.json
 
@@ -57,7 +57,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 24
           cache: npm
           cache-dependency-path: starter/frontend/package-lock.json
 
@@ -82,7 +82,7 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
@@ -111,12 +111,7 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v4
-        with:
-          version: latest
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Update kubeconfig
         run: |
@@ -124,24 +119,8 @@ jobs:
             --region ${{ env.AWS_REGION }} \
             --name ${{ env.EKS_CLUSTER_NAME }}
 
-      - name: Verify cluster
-        run: kubectl get nodes
-
       - name: Deploy to EKS
         run: |
           kubectl apply -f starter/frontend/k8s/frontend-deployment.yaml
           kubectl apply -f starter/frontend/k8s/frontend-service.yaml
-
-          # Remove any stuck frontend pods
-          kubectl delete pod -l app=frontend --force --grace-period=0 || true
-
-          # Restart deployment cleanly
-          kubectl rollout restart deployment/frontend
-
-          # Wait for rollout to complete
-          kubectl rollout status deployment/frontend --timeout=300s
-
-      - name: Show deployment status
-        run: |
-          kubectl get pods -l app=frontend -o wide
-          kubectl get svc frontend-service -o wide
+          kubectl rollout status deployment/frontend
