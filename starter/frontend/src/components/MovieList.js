@@ -6,28 +6,15 @@ function MovieList({ onMovieClick }) {
   const [movies, setMovies] = useState([]);
 
   useEffect(() => {
-    const apiUrl = process.env.REACT_APP_MOVIE_API_URL;
-
-    // Skip API call during tests if env variable is not set
-    if (!apiUrl) {
-      return;
-    }
-
-    axios
-      .get(`${apiUrl}/movies`)
-      .then((response) => {
-        // Backend returns an array directly
-        setMovies(response.data);
-      })
-      .catch((error) => {
-        console.error('Error fetching movies:', error);
-      });
+    axios.get(`${process.env.REACT_APP_MOVIE_API_URL}/movies`).then((response) => {
+      setMovies(response.data.movies);
+    });
   }, []);
 
   return (
     <ul>
       {movies.map((movie) => (
-        <li key={movie.id} className="movieItem" onClick={() => onMovieClick(movie)}>
+        <li className="movieItem" key={movie.id} onClick={() => onMovieClick(movie)}>
           {movie.title}
         </li>
       ))}
