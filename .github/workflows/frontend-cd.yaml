@@ -15,8 +15,8 @@ env:
   EKS_CLUSTER_NAME: cluster
   ECR_REPOSITORY: frontend
 
-  # PUBLIC backend URL for browser access
-  REACT_APP_MOVIE_API_URL: http://aef2ead0113804ba6a3df7124b342f04-1898121545.us-east-1.elb.amazonaws.com:5000/movies
+  # Base backend URL (WITHOUT /movies)
+  REACT_APP_MOVIE_API_URL: http://aef2ead0113804ba6a3df7124b342f04-1898121545.us-east-1.elb.amazonaws.com:5000
 
 jobs:
   lint:
