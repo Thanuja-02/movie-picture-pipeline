@@ -1,6 +1,7 @@
 name: Frontend Continuous Deployment
 
 on:
+  workflow_dispatch:  # <-- ADD THIS LINE to enable manual triggering
   push:
     branches: [ main ]
 
@@ -37,4 +38,4 @@ jobs:
 
       - name: Deploy to EKS
         run: |
-          kubectl apply -f k8./starter/frontend-deployment.yaml
+          kubectl apply -f k8s/frontend-deployment.yaml
