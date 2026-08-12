@@ -6,9 +6,17 @@ function MovieList({ onMovieClick }) {
   const [movies, setMovies] = useState([]);
 
   useEffect(() => {
+    const apiUrl = process.env.REACT_APP_MOVIE_API_URL;
+
+    // Skip API call during tests if env variable is not set
+    if (!apiUrl) {
+      return;
+    }
+
     axios
-      .get(`${process.env.REACT_APP_MOVIE_API_URL}/movies`)
+      .get(`${apiUrl}/movies`)
       .then((response) => {
+        // Backend returns an array directly
         setMovies(response.data);
       })
       .catch((error) => {
