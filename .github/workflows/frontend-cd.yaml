@@ -1,8 +1,6 @@
 name: Frontend Continuous Deployment
 
 on:
-  workflow_dispatch:
-
   push:
     branches:
       - main
@@ -10,13 +8,17 @@ on:
       - 'starter/frontend/**'
       - '.github/workflows/frontend-cd.yaml'
 
+  workflow_dispatch:
+
 env:
   AWS_REGION: us-east-1
   EKS_CLUSTER_NAME: cluster
+  ECR_REPOSITORY: frontend
+  IMAGE_TAG: latest
+  REACT_APP_MOVIE_API_URL: http://backend-service:5000
 
 jobs:
   lint:
-    name: Lint
     runs-on: ubuntu-latest
 
     defaults:
@@ -24,24 +26,16 @@ jobs:
         working-directory: starter/frontend
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: npm
-          cache-dependency-path: starter/frontend/package-lock.json
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run ESLint
-        run: npm run lint
+      - run: npm ci
+      - run: npm run lint
 
   test:
-    name: Test
     runs-on: ubuntu-latest
     needs: lint
 
@@ -50,93 +44,56 @@ jobs:
         working-directory: starter/frontend
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: npm
-          cache-dependency-path: starter/frontend/package-lock.json
 
-      - name: Install dependencies
-        run: npm ci
+      - run: npm ci
+      - run: npm test -- --watchAll=false
 
-      - name: Run tests
-        run: CI=true npm test -- --watchAll=false
-
-  build:
-    name: Build Docker Image
+  build-and-deploy:
     runs-on: ubuntu-latest
     needs: test
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Build Docker image
-        run: |
-          docker build -t frontend ./starter/frontend
-
-      - name: Verify Docker image
-        run: docker images frontend
-
-  deploy:
-    name: Deploy
-    runs-on: ubuntu-latest
-    needs: build
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-          aws-region: us-east-1
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v4
-        with:
-          version: latest
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
 
-      # This step may fail in Vocareum, so we allow failure
+      - name: Set ECR registry
+        run: |
+          echo "ECR_REGISTRY=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com" >> $GITHUB_ENV
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            --build-arg REACT_APP_MOVIE_API_URL=$REACT_APP_MOVIE_API_URL \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            ./starter/frontend
+
+      - name: Push Docker image
+        run: |
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
       - name: Update kubeconfig
-        id: kubeconfig
-        continue-on-error: true
         run: |
           aws eks update-kubeconfig \
-            --region us-east-1 \
-            --name cluster
+            --region $AWS_REGION \
+            --name $EKS_CLUSTER_NAME
 
-      # Run only if kubeconfig succeeded
-      - name: Verify cluster
-        if: steps.kubeconfig.outcome == 'success'
-        run: kubectl get nodes
-
-      # Run only if kubeconfig succeeded
-      - name: Deploy to EKS
-        if: steps.kubeconfig.outcome == 'success'
+      - name: Deploy frontend
         run: |
           kubectl apply -f starter/frontend/k8s/frontend-deployment.yaml
           kubectl apply -f starter/frontend/k8s/frontend-service.yaml
-
-          # Remove any stuck frontend pods
-          kubectl delete pod -l app=frontend --force --grace-period=0 || true
-
-          # Restart deployment cleanly
           kubectl rollout restart deployment/frontend
-
-          # Wait for rollout to complete
-          kubectl rollout status deployment/frontend --timeout=300s
-
-      # Run when EKS access is denied
-      - name: Skip deployment when EKS access is denied
-        if: steps.kubeconfig.outcome != 'success'
-        run: |
-          echo "EKS deployment skipped because Vocareum blocks eks:DescribeCluster in GitHub Actions."
-          echo "Lint, Test, and Build completed successfully."
+          kubectl rollout status deployment/frontend
