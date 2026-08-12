@@ -121,8 +121,8 @@ jobs:
       - name: Deploy to EKS
         if: steps.kubeconfig.outcome == 'success'
         run: |
-          kubectl apply -f starter/backend/k8s/backend-deployment.yaml
-          kubectl apply -f starter/backend/k8s/backend-service.yaml
+          kubectl apply -f starter/backend/k8s/deployment.yaml
+          kubectl apply -f starter/backend/k8s/service.yaml
 
           kubectl delete pod -l app=backend --force --grace-period=0 || true
 
