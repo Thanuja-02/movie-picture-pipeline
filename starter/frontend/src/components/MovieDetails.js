@@ -3,32 +3,16 @@ import axios from 'axios';
 
 function MovieDetail({ movie }) {
   const [details, setDetails] = useState(null);
-
   useEffect(() => {
-    const apiUrl = process.env.REACT_APP_MOVIE_API_URL;
-
-    if (!apiUrl) {
-      return;
-    }
-
-    axios
-      .get(`${apiUrl}/movies/${movie.id}`)
-      .then((response) => {
-        setDetails(response.data);
-      })
-      .catch((error) => {
-        console.error('Error fetching movie details:', error);
-      });
+    axios.get(`${process.env.REACT_APP_MOVIE_API_URL}/movies/${movie.id}`).then((response) => {
+      setDetails(response.data);
+    });
   }, [movie]);
-
-  if (!details) {
-    return <p>Loading movie details...</p>;
-  }
 
   return (
     <div>
-      <h2>{details.title}</h2>
-      <p>{details.description}</p>
+      <h2>{details?.movie.title}</h2>
+      <p>{details?.movie.description}</p>
     </div>
   );
 }
