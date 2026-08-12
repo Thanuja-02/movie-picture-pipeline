@@ -9,7 +9,6 @@ function MovieList({ onMovieClick }) {
     axios
       .get(`${process.env.REACT_APP_MOVIE_API_URL}/movies`)
       .then((response) => {
-        // backend returns an array directly
         setMovies(response.data);
       })
       .catch((error) => {
@@ -20,11 +19,7 @@ function MovieList({ onMovieClick }) {
   return (
     <ul>
       {movies.map((movie) => (
-        <li
-          key={movie.id}
-          className="movieItem"
-          onClick={() => onMovieClick(movie)}
-        >
+        <li key={movie.id} className="movieItem" onClick={() => onMovieClick(movie)}>
           {movie.title}
         </li>
       ))}
