@@ -24,7 +24,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t frontend ./frontend
+          docker build -t frontend ./starter/frontend
           docker tag frontend:latest ${{ secrets.ECR_FRONTEND_REPOSITORY }}:latest
 
       - name: Push image to ECR
@@ -37,4 +37,4 @@ jobs:
 
       - name: Deploy to EKS
         run: |
-          kubectl apply -f k8s/frontend-deployment.yaml
+          kubectl apply -f k8./starter/frontend-deployment.yaml
