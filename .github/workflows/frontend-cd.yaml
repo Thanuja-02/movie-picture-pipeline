@@ -6,9 +6,12 @@ on:
     types:
       - completed
 
+  # Enables the "Run workflow" button in GitHub Actions
+  workflow_dispatch:
+
 jobs:
   deploy:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     env:
@@ -44,13 +47,19 @@ jobs:
 
       - name: Deploy frontend
         run: |
+          echo "Applying deployment..."
           kubectl apply -f starter/frontend/k8s/frontend-deployment.yaml
+
+          echo "Applying service..."
           kubectl apply -f starter/frontend/k8s/frontend-service.yaml
 
+          echo "Deleting stuck pods if any..."
           kubectl delete pod -l app=frontend --force --grace-period=0 || true
 
+          echo "Restarting deployment..."
           kubectl rollout restart deployment/frontend
 
+          echo "Waiting for rollout..."
           kubectl rollout status deployment/frontend --timeout=300s
 
       - name: Show status
