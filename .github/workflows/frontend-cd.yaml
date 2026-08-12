@@ -97,27 +97,30 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: us-east-1
 
       - name: Install kubectl
         uses: azure/setup-kubectl@v4
         with:
           version: latest
 
-      - name: Try to connect to EKS
-        id: eks
+      # This step may fail in Vocareum, so we allow failure
+      - name: Update kubeconfig
+        id: kubeconfig
         continue-on-error: true
         run: |
           aws eks update-kubeconfig \
-            --region $AWS_REGION \
-            --name $EKS_CLUSTER_NAME
+            --region us-east-1 \
+            --name cluster
 
+      # Run only if kubeconfig succeeded
       - name: Verify cluster
-        if: steps.eks.outcome == 'success'
+        if: steps.kubeconfig.outcome == 'success'
         run: kubectl get nodes
 
+      # Run only if kubeconfig succeeded
       - name: Deploy to EKS
-        if: steps.eks.outcome == 'success'
+        if: steps.kubeconfig.outcome == 'success'
         run: |
           kubectl apply -f starter/frontend/k8s/frontend-deployment.yaml
           kubectl apply -f starter/frontend/k8s/frontend-service.yaml
@@ -131,14 +134,9 @@ jobs:
           # Wait for rollout to complete
           kubectl rollout status deployment/frontend --timeout=300s
 
-      - name: Show deployment status
-        if: steps.eks.outcome == 'success'
-        run: |
-          kubectl get pods -l app=frontend -o wide
-          kubectl get svc frontend-service -o wide
-
+      # Run when EKS access is denied
       - name: Skip deployment when EKS access is denied
-        if: steps.eks.outcome != 'success'
+        if: steps.kubeconfig.outcome != 'success'
         run: |
           echo "EKS deployment skipped because Vocareum blocks eks:DescribeCluster in GitHub Actions."
           echo "Lint, Test, and Build completed successfully."
